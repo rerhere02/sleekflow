@@ -47,23 +47,21 @@ Feature: Login, Logout, Password Reset, Accessibility & Responsive
       When user click the "Edit" link
       Then the identifier step is restored
 
-    @TC-194 @high @regression @no-auth
-    Scenario: TC-194 Required error when password submitted empty
-      When user click the Sign in button
-      Then an inline error is displayed
-
-    @TC-195 @high @regression @no-auth
-    Scenario: TC-195 Generic error for incorrect password
-      When user enter password "WrongPassword1!"
+    @TC-194 @TC-195 @TC-198 @high @regression @no-auth
+    Scenario Outline: Login with <case> password — <expected>
+      When user enter password "<password>"
       And user click the Sign in button
-      Then an inline error is displayed
+      Then <expected>
 
-    @TC-198 @critical @regression @smoke @no-auth
-    Scenario: TC-198 Dashboard displayed after successful login
-      When user enter the configured test password
-      And user click the Sign in button
-      Then the dashboard is displayed
-      And no error is displayed
+      @critical @smoke
+      Examples: Valid
+        | case       | password | expected                                    |
+        | valid      | [env]    | the dashboard is displayed                  |
+
+      Examples: Invalid
+        | case       | password        | expected                     |
+        | empty      |                 | an inline error is displayed |
+        | incorrect  | WrongPassword1! | an inline error is displayed |
 
   # ═══════════════════════════════════════════════════════════════
   # Logout & Session Management

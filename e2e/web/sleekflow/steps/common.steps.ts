@@ -59,7 +59,9 @@ When('user enter a fresh test email', async function (this: PlaywrightWorld) {
 });
 
 When('user enter password {string}', async function (this: PlaywrightWorld, password: string) {
-  await passwordInput(this.page).fill(password);
+  // [env] resolves to the configured test password from environment
+  const value = password === '[env]' ? process.env.TEST_PASSWORD! : password;
+  await passwordInput(this.page).fill(value);
 });
 
 When('user enter full name {string}', async function (this: PlaywrightWorld, name: string) {
