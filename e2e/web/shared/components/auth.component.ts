@@ -17,7 +17,7 @@ export class AuthComponent {
   async goToPasswordStep(email?: string): Promise<void> {
     await this.loginPage.goto();
     await this.loginPage.goToPasswordStep(
-      email ?? process.env.TEST_EMAIL ?? 'sftestq+owner@gmail.com',
+      email ?? process.env.TEST_EMAIL!,
     );
   }
 
@@ -25,8 +25,8 @@ export class AuthComponent {
   async loginViaUI(email?: string, password?: string): Promise<void> {
     await this.loginPage.goto();
     await this.loginPage.login(
-      email ?? process.env.TEST_EMAIL ?? 'sftestq+owner@gmail.com',
-      password ?? process.env.TEST_PASSWORD ?? 'P@ssword123',
+      email ?? process.env.TEST_EMAIL!,
+      password ?? process.env.TEST_PASSWORD!,
     );
     await this.page.waitForURL(
       url => !url.toString().includes('sso.sleekflow.io'),

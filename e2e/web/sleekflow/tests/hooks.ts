@@ -5,7 +5,7 @@ import { chromium, Browser } from '@playwright/test';
 import { PlaywrightWorld } from '../utils/world';
 import { getConfig } from '../utils/config';
 import { appendCleanupLog, getCleanupEntries, clearCleanupManifest } from '../factories/factory-helpers';
-import { SEED_EMAILS, TEST_EMAIL } from '../utils/test-constants';
+import { TEST_EMAIL } from '../utils/test-constants';
 import * as path from 'path';
 import * as fs from 'fs';
 
@@ -32,9 +32,6 @@ async function verifySeedAccounts(browser: Browser): Promise<void> {
   console.log(`[SEED] Environment: ${env}`);
   console.log(`[SEED] Test account: ${TEST_EMAIL}`);
   console.log(`[SEED] SSO URL: ${config.ssoUrl}`);
-  if (env !== 'prod') {
-    console.log(`[SEED] Seed emails: ${Object.values(SEED_EMAILS).join(', ')}`);
-  }
 }
 
 // ── BeforeAll: launch browser, login-once, verify seeds ──

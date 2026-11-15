@@ -39,13 +39,11 @@ Given('user is logged into the app', async function (this: PlaywrightWorld) {
 // ── Env-based Credentials ──
 
 When('user enter the configured test email', async function (this: PlaywrightWorld) {
-  const email = process.env.TEST_EMAIL ?? 'sftestq+owner@gmail.com';
-  await emailInput(this.page).fill(email);
+  await emailInput(this.page).fill(process.env.TEST_EMAIL!);
 });
 
 When('user enter the configured test password', async function (this: PlaywrightWorld) {
-  const password = process.env.TEST_PASSWORD ?? 'P@ssword123';
-  await passwordInput(this.page).fill(password);
+  await passwordInput(this.page).fill(process.env.TEST_PASSWORD!);
 });
 
 // ── Form Input ──

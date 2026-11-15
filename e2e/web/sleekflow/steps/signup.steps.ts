@@ -2,7 +2,7 @@ import { Given, When, Then } from '@cucumber/cucumber';
 import { expect } from '@playwright/test';
 import { PlaywrightWorld } from '../utils/world';
 import { SignUpPage } from '../pages/signup.page';
-import { generateTestEmail, DEFAULT_TEST_PASSWORD } from '../utils/test-constants';
+import { generateTestEmail, TEST_PASSWORD } from '../utils/test-constants';
 import { getConfig } from '../utils/config';
 import { verifyEmail, deleteUser } from '../utils/auth0-mgmt';
 import { getVerificationCode } from '../utils/gmail-reader';
@@ -42,7 +42,7 @@ When('user complete the full signup flow', async function (this: PlaywrightWorld
   await signUpPage.clickSignUp();
   await this.page.locator('#password').waitFor({ timeout: 10_000 });
   await signUpPage.fillFullName('Test Automation User');
-  await signUpPage.fillPassword(DEFAULT_TEST_PASSWORD);
+  await signUpPage.fillPassword(TEST_PASSWORD);
   await signUpPage.clickContinue();
   this.scenarioData['completedSignup'] = true;
 });

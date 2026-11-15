@@ -1,8 +1,8 @@
 /**
  * Gmail IMAP helper — reads verification codes from Gmail.
- * Uses the signup email (sftestq+xxx@gmail.com) as the IMAP username.
- * Gmail treats +tag addresses as the same account, so the same password works.
- * Requires env var: GMAIL_APP_PASSWORD
+ * Uses the signup email (+tag address) as the IMAP username.
+ * Gmail treats +tag addresses as the same account, so the same app password works.
+ * Requires env vars: TEST_EMAIL, GMAIL_APP_PASSWORD
  */
 import { ImapFlow } from 'imapflow';
 

@@ -12,7 +12,7 @@ export function getConfig(): Config {
 
   const shared = {
     ssoUrl: process.env.SSO_URL ?? 'https://sso.sleekflow.io',
-    auth0ClientId: process.env.AUTH0_CLIENT_ID ?? 'JF6HeS1ExhYR8zig8L4TquIo1XKMVSiC',
+    auth0ClientId: process.env.AUTH0_CLIENT_ID ?? '',
     headless: process.env.HEADLESS !== 'false',
     defaultTimeout: 30_000,
   };
