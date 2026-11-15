@@ -21,6 +21,27 @@ export class AuthComponent {
     );
   }
 
+  /**
+   * Navigate to the app as an already-authenticated user.
+   * Relies on stored auth state (storageState) loaded in the Before hook.
+   * Falls back to full UI login if SSO redirect is detected.
+   */
+  async navigateAsLoggedIn(): Promise<void> {
+    const config = getConfig();
+    await this.page.goto(config.baseUrl, { waitUntil: 'commit' });
+    // If auth state is valid, page stays on the app (no SSO redirect)
+    const url = this.page.url();
+    if (url.includes('sso.sleekflow.io')) {
+      // Auth state expired — fall back to UI login
+      await this.loginViaUI();
+    } else {
+      await this.page.waitForURL(
+        u => !u.toString().includes('sso.sleekflow.io'),
+        { timeout: 30_000 },
+      );
+    }
+  }
+
   /** Full UI login with email + password, ending on the dashboard. */
   async loginViaUI(email?: string, password?: string): Promise<void> {
     await this.loginPage.goto();
@@ -44,10 +65,11 @@ export class AuthComponent {
     await this.page.context().clearCookies();
     await this.page.goto(
       `${config.ssoUrl}/v2/logout?client_id=${config.auth0ClientId}&returnTo=${encodeURIComponent(config.baseUrl)}`,
+      { waitUntil: 'commit' },
     );
     await this.page.waitForURL(
       url => url.toString().includes('sso.sleekflow.io/u/login') || url.toString().includes(config.baseUrl),
-      { timeout: 15_000 },
+      { timeout: 15_000, waitUntil: 'commit' },
     );
   }
 }

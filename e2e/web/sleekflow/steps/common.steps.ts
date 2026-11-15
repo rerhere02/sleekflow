@@ -33,7 +33,7 @@ Given('user is on the login password step', async function (this: PlaywrightWorl
 
 Given('user is logged into the app', async function (this: PlaywrightWorld) {
   const auth = new AuthComponent(this.page);
-  await auth.loginViaUI();
+  await auth.navigateAsLoggedIn();
 });
 
 // ── Env-based Credentials ──
@@ -91,7 +91,10 @@ When('user click the {string} button', async function (this: PlaywrightWorld, na
 });
 
 When('user click the {string} link', async function (this: PlaywrightWorld, name: string) {
-  await this.page.getByRole('link', { name: new RegExp(name, 'i') }).click();
+  const link = this.page.getByRole('link', { name: new RegExp(name, 'i') });
+  // Auth0 password tooltip can overlay nearby links — dismiss it first
+  await this.page.locator('body').click({ position: { x: 0, y: 0 } }).catch(() => {});
+  await link.click();
 });
 
 When('user click the show\\/hide password toggle', async function (this: PlaywrightWorld) {

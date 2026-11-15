@@ -101,11 +101,16 @@ Then('the Sign up link preserves session state', async function (this: Playwrigh
 Then('the Google and Apple buttons are visible on the login page', async function (this: PlaywrightWorld) {
   const loginPage = new LoginPage(this.page);
   await expect(loginPage.btnContinueWithGoogle).toBeVisible({ timeout: 10_000 });
-  await expect(loginPage.btnSignInWithApple).toBeVisible({ timeout: 10_000 });
+  // Apple button text varies: "Sign in with Apple" or "Continue with Apple"
+  const appleBtn = loginPage.btnSignInWithApple
+    .or(this.page.getByRole('button', { name: /continue with apple/i }));
+  await expect(appleBtn).toBeVisible({ timeout: 10_000 });
 });
 
 Then('the social login buttons are not visible', async function (this: PlaywrightWorld) {
   const loginPage = new LoginPage(this.page);
   await expect(loginPage.btnContinueWithGoogle).not.toBeVisible({ timeout: 3_000 });
-  await expect(loginPage.btnSignInWithApple).not.toBeVisible({ timeout: 3_000 });
+  const appleBtn = loginPage.btnSignInWithApple
+    .or(this.page.getByRole('button', { name: /continue with apple/i }));
+  await expect(appleBtn).not.toBeVisible({ timeout: 3_000 });
 });
