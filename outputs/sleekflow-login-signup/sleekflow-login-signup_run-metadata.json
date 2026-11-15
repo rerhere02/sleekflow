@@ -1,0 +1,48 @@
+{
+  "prd_slug": "sleekflow-login-signup",
+  "generated_at": "2026-11-12T21:39:13.779909",
+  "prd_health_score": 63,
+  "prd_health_grade": "YELLOW",
+  "tickets_count": 12,
+  "total_test_cases": 124,
+  "total_estimate_minutes": 1220,
+  "priority_distribution": {
+    "Critical": 19,
+    "High": 63,
+    "Medium": 39,
+    "Low": 3
+  },
+  "automation_distribution": {
+    "UI Test": 113,
+    "API Test": 2,
+    "Manual": 9,
+    "Unit Test": 0
+  },
+  "regression_eligible_count": 81,
+  "unique_tags": [
+    "auth",
+    "functionality",
+    "integration",
+    "negative",
+    "onboarding",
+    "positive",
+    "regression",
+    "sanity",
+    "ui"
+  ],
+  "cross_ticket_tcs": 4,
+  "traceability": {
+    "total_acs": 63,
+    "linked_acs": 63,
+    "unlinked_acs": 0,
+    "coverage_pct": 100.0
+  },
+  "blocking_tbds": [
+    "D1 \u2014 existing email sign-up behavior",
+    "D2 \u2014 social consent capture method"
+  ],
+  "human_reviewed": false,
+  "csvs_merged": 13,
+  "exploratory_charters": 6,
+  "exploratory_timebox_minutes": 225
+}

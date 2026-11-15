@@ -1,0 +1,30 @@
+# Dependencies
+node_modules/
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+
+# Auth state (contains session tokens)
+.auth/
+
+# Test reports & artifacts
+reports/
+traces/
+
+# Generated
+dist/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Dead code (replaced by generate-report.mjs)
+scripts/generate-report.js

@@ -1,0 +1,203 @@
+name: E2E Tests
+
+on:
+  # Run on push to main/develop
+  push:
+    branches: [main, develop]
+  # Run on PRs targeting main
+  pull_request:
+    branches: [main]
+  # Manual trigger with options
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'stg'
+        type: choice
+        options: [stg, prod]
+      tags:
+        description: 'Cucumber tag expression (e.g. @smoke, @regression, @TC-198)'
+        required: false
+        default: ''
+      profile:
+        description: 'Cucumber profile'
+        required: true
+        default: 'sleekflow'
+        type: choice
+        options: [sleekflow, ci-smoke]
+
+  # Scheduled nightly regression
+  schedule:
+    - cron: '0 2 * * 1-5' # Mon-Fri at 2am UTC
+
+env:
+  NODE_VERSION: '20'
+  WORKING_DIR: e2e/web
+
+jobs:
+  e2e:
+    name: E2E (${{ inputs.environment || 'stg' }}) — ${{ inputs.profile || 'sleekflow' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    defaults:
+      run:
+        working-directory: ${{ env.WORKING_DIR }}
+
+    env:
+      ENV: ${{ inputs.environment || 'stg' }}
+      HEADLESS: 'true'
+      TEST_EMAIL: ${{ secrets.TEST_EMAIL }}
+      TEST_PASSWORD: ${{ secrets.TEST_PASSWORD }}
+      AUTH0_CLIENT_ID: ${{ secrets.AUTH0_CLIENT_ID }}
+      AUTH0_M2M_CLIENT_ID: ${{ secrets.AUTH0_M2M_CLIENT_ID }}
+      AUTH0_M2M_CLIENT_SECRET: ${{ secrets.AUTH0_M2M_CLIENT_SECRET }}
+      GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+
+    steps:
+      # ── Setup ──
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: ${{ env.WORKING_DIR }}/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      # ── Run Tests ──
+      - name: Run E2E tests
+        id: tests
+        run: |
+          PROFILE="${{ inputs.profile || 'sleekflow' }}"
+          TAGS="${{ inputs.tags }}"
+
+          CMD="npx cucumber-js --profile $PROFILE"
+
+          # Apply tag filter — manual input overrides, scheduled runs use regression
+          if [ -n "$TAGS" ]; then
+            CMD="$CMD --tags '$TAGS'"
+          elif [ "${{ github.event_name }}" = "schedule" ]; then
+            CMD="$CMD --tags '@regression and not @staging-only'"
+          elif [ "${{ github.event_name }}" = "pull_request" ]; then
+            CMD="$CMD --tags '@smoke and not @staging-only'"
+          fi
+
+          # Prod runs exclude staging-only and creates-account
+          if [ "$ENV" = "prod" ]; then
+            CMD="$CMD --tags 'not @staging-only and not @creates-account'"
+          fi
+
+          echo "Running: $CMD"
+          eval $CMD
+        continue-on-error: true
+
+      # ── Reports ──
+      - name: Generate HTML report
+        if: always()
+        run: node scripts/generate-report.mjs --profile ${{ inputs.profile || 'sleekflow' }}
+
+      - name: Upload Cucumber JSON report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cucumber-json-report
+          path: ${{ env.WORKING_DIR }}/reports/*-results.json
+          retention-days: 30
+
+      - name: Upload HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cucumber-html-report
+          path: ${{ env.WORKING_DIR }}/reports/*-html/
+          retention-days: 30
+
+      - name: Upload Playwright traces (on failure)
+        if: failure() || steps.tests.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-traces
+          path: ${{ env.WORKING_DIR }}/traces/
+          retention-days: 7
+          if-no-files-found: ignore
+
+      # ── Parse results for notifications ──
+      - name: Parse test results
+        if: always()
+        id: results
+        run: |
+          REPORT="reports/${{ inputs.profile || 'sleekflow' }}-results.json"
+          if [ -f "$REPORT" ]; then
+            TOTAL=$(jq '[.[].elements[]] | length' "$REPORT")
+            PASSED=$(jq '[.[].elements[] | select(.steps | all(.result.status == "passed"))] | length' "$REPORT")
+            FAILED=$(jq '[.[].elements[] | select(.steps | any(.result.status == "failed"))] | length' "$REPORT")
+            SKIPPED=$(jq "[.[].elements[] | select(.steps | any(.result.status == \"skipped\"))] | length" "$REPORT")
+
+            echo "total=$TOTAL" >> $GITHUB_OUTPUT
+            echo "passed=$PASSED" >> $GITHUB_OUTPUT
+            echo "failed=$FAILED" >> $GITHUB_OUTPUT
+            echo "skipped=$SKIPPED" >> $GITHUB_OUTPUT
+            echo "has_failures=$( [ "$FAILED" -gt 0 ] && echo true || echo false )" >> $GITHUB_OUTPUT
+          else
+            echo "total=0" >> $GITHUB_OUTPUT
+            echo "passed=0" >> $GITHUB_OUTPUT
+            echo "failed=0" >> $GITHUB_OUTPUT
+            echo "skipped=0" >> $GITHUB_OUTPUT
+            echo "has_failures=true" >> $GITHUB_OUTPUT
+          fi
+
+      # ── Slack Notification ──
+      - name: Notify Slack
+        if: always() && vars.SLACK_WEBHOOK_URL
+        uses: slackapi/slack-github-action@v2.1.0
+        with:
+          webhook: ${{ vars.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          payload: |
+            {
+              "text": "${{ steps.tests.outcome == 'success' && 'E2E Tests Passed' || 'E2E Tests Failed' }}",
+              "blocks": [
+                {
+                  "type": "header",
+                  "text": {
+                    "type": "plain_text",
+                    "text": "${{ steps.tests.outcome == 'success' && 'E2E Tests Passed' || 'E2E Tests Failed' }}"
+                  }
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    { "type": "mrkdwn", "text": "*Environment:*\n${{ inputs.environment || 'stg' }}" },
+                    { "type": "mrkdwn", "text": "*Branch:*\n${{ github.ref_name }}" },
+                    { "type": "mrkdwn", "text": "*Total:* ${{ steps.results.outputs.total }}" },
+                    { "type": "mrkdwn", "text": "*Passed:* ${{ steps.results.outputs.passed }}" },
+                    { "type": "mrkdwn", "text": "*Failed:* ${{ steps.results.outputs.failed }}" },
+                    { "type": "mrkdwn", "text": "*Skipped:* ${{ steps.results.outputs.skipped }}" }
+                  ]
+                },
+                {
+                  "type": "actions",
+                  "elements": [
+                    {
+                      "type": "button",
+                      "text": { "type": "plain_text", "text": "View Run" },
+                      "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                    }
+                  ]
+                }
+              ]
+            }
+
+      # ── Fail the job if tests failed ──
+      - name: Fail if tests failed
+        if: steps.tests.outcome == 'failure'
+        run: exit 1

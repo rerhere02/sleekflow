@@ -1,0 +1,28 @@
+{
+  "name": "qagent-e2e-web",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "test": "ENV=${npm_config_env:-stg} npx cucumber-js --profile sleekflow",
+    "test:prod": "ENV=prod npx cucumber-js --profile sleekflow --tags 'not @staging-only'",
+    "test:login": "ENV=${npm_config_env:-stg} npx cucumber-js --profile sleekflow --tags '@TC-184 or @TC-186 or @TC-194 or @TC-195 or @TC-198'",
+    "test:tag": "ENV=${npm_config_env:-stg} npx cucumber-js --profile sleekflow --tags",
+    "test:smoke": "ENV=${npm_config_env:-stg} HEADLESS=true npx cucumber-js --profile ci-smoke",
+    "ci:smoke": "ENV=prod HEADLESS=true npx cucumber-js --profile ci-smoke --tags '@smoke and @critical and not @staging-only'",
+    "report": "node scripts/generate-report.mjs --profile sleekflow",
+    "test:report": "npm run test && npm run report"
+  },
+  "dependencies": {
+    "@cucumber/cucumber": "^10.3.2",
+    "@playwright/test": "^1.44.0",
+    "imapflow": "^2.11.0",
+    "playwright": "^1.44.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.5"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.12",
+    "dotenv": "^18.0.10",
+    "multiple-cucumber-html-reporter": "^4.6.0"
+  }
+}
